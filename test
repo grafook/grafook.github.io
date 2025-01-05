@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animated Grid with Webcam Control</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  let gridSize;   // Declare gridSize as a variable that will change
+  let offset = 0;  // To animate the grid size changes smoothly
+
+  // Variables for the center position
+  let centerX, centerY;
+
+  // Webcam capture variable
+  let video;
+
+  function setup() {
+    createCanvas(windowWidth, windowHeight);  // Set canvas size to the window size
+    noFill();                                // Disable filling for shapes
+    frameRate(12);                           // Set frame rate for smoother animation
+
+    // Initialize the center position at the center of the canvas
+    centerX = width / 2;
+    centerY = height / 2;
+
+    // Set up the webcam capture
+    video = createCapture(VIDEO, () => {
+      video.size(width, height);  // Set the video capture size
+      video.hide();               // Hide the default webcam display
+    });
+  }
+
+  function draw() {
+    background(0);  // Clear the background every frame
+
+    // Capture the brightness from the webcam feed
+    video.loadPixels();  // Load the pixel data of the video
+    let totalBrightness = 0;
+
+    // Loop through the pixels to calculate the total brightness
+    for (let i = 0; i < video.pixels.length; i += 4) {
+      // Get the brightness of the pixel using the RGB values (average of R, G, B)
+      let r = video.pixels[i];
+      let g = video.pixels[i + 1];
+      let b = video.pixels[i + 2];
+      totalBrightness += (r + g + b) / 3;  // Average brightness of the pixel
+    }
+
+    // Calculate the average brightness of the frame
+    let avgBrightness = totalBrightness / (video.pixels.length / 4);
+
+    // Map the brightness to control the center position
+    centerX = map(avgBrightness, 0, 255, 0, width);  // Map brightness to x-coordinate
+    centerY = map(avgBrightness, 0, 255, 0, height); // Map brightness to y-coordinate
+
+    // Animate grid size to randomly oscillate between 10 and 400
+    offset += 0.05;
+    gridSize = int(map(sin(offset), -1, 1, 10, 400));  // Map the sine wave to a range from 10 to 400
+    
+    // Randomize the stroke weight (line thickness) between 1 and 10
+    let lineWidth = random(0.1, 1);  // Random line width between 0.1 and 1
+    strokeWeight(lineWidth);  // Apply the randomized stroke width
+    
+    // Loop to draw the lines
+    for (let x = gridSize; x <= width - gridSize; x += gridSize) {
+      for (let y = gridSize; y <= height - gridSize; y += gridSize) {
+        noStroke();  // No stroke for the small rectangles
+        fill(0);     // Fill the small rectangles with black
+        rect(x - 1000, y - 1000, 2, 2);  // Draw a small rectangle
+        
+        stroke(255);  // Set stroke color to white
+        line(x, y, centerX, centerY);  // Draw a line from each grid point to the animated center
+      }
+    }
+  }
+
+  // Resize the canvas when the window size changes
+  function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+    centerX = width / 2;  // Recalculate center position
+    centerY = height / 2; // Recalculate center position
+  }
+</script>
+
+</body>
+</html>
